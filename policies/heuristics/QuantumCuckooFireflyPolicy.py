@@ -10,8 +10,8 @@ class QICFFPolicy(BasePolicy):
 
         # Poids du score
         self.alpha = 0.1
-        self.beta = 1
-        self.gamma = 0.01
+        self.beta = 0.1
+        self.gamma = 0.6
 
         # Firefly
         self.population_size = 100
@@ -31,50 +31,54 @@ class QICFFPolicy(BasePolicy):
     def _score_node(self, node, task):
         node_obj = self.env.scenario.get_node(node)
 
-        # 1. Paramètres physiques
+        # --- 1. Paramètres de base et Sécurisation ---
         ddl = getattr(task, 'DDL', getattr(task, 'deadline', getattr(task, 'ddl', 50.0)))
-        # On utilise 1e-6 pour éviter toute division par zéro
         cpu_speed = max(node_obj.free_cpu_freq, 1e-6)
+        task_size = getattr(task, 'task_size', getattr(task, 'TaskSize', 100))
+        cpb = getattr(task, 'cycles_per_bit', getattr(task, 'CyclesPerBit', 50.0))
 
-        # 2. Temps de Transmission (lié à la bande passante du lien)
-        # Important : task.trans_bit_rate varie selon le lien Src->Dst
-        transmission_time = task.task_size / max(task.trans_bit_rate, 1e-6)
+        # --- 2. Calcul des composants du score ---
 
-        # 3. Temps de Calcul et d'Attente
-        computation_time = (task.task_size * task.cycles_per_bit) / cpu_speed
+        # A. Latence et Énergie
+        transmission_time = task_size / max(task.trans_bit_rate, 1e-6)
+        computation_time = (task_size * cpb) / cpu_speed
         wait_time = len(node_obj.task_buffer.task_ids) * computation_time
-
-        # Latence totale estimée
         total_latency = transmission_time + computation_time + wait_time
-
-        # 4. Énergie (Consommation dynamique)
         energy_consumed = computation_time * node_obj.exe_energy_coef
 
-        # 5. Charge du nœud (Buffer occupé / Buffer Max)
-        max_buf = getattr(node_obj, 'max_buffer_size', getattr(node_obj, 'max_buffer_len', 5000))
-        load_ratio = len(node_obj.task_buffer.task_ids) / (max_buf / task.task_size)
+        # B. Débit (Throughput) : Nombre de tâches traitées par seconde
+        # Plus le débit est grand, plus le nœud est puissant pour cette tâche
+        tasks_per_second = cpu_speed / (task_size * cpb)
 
-        # --- NORMALISATION ENTRE 0 ET 1 ---
+        # C. Pénalité de tâche active
+        # On vérifie si le nœud travaille déjà sur quelque chose
+        active_penalty = 0.2 if len(node_obj.active_task_ids) > 0 else 0.0
 
-        # Latence : Normalisée par rapport à la Deadline (DDL) de la tâche
-        # Si total_latency approche ou dépasse DDL, le score tend vers 1 (mauvais)
+        # --- 3. Normalisation (Toutes les valeurs vers [0, 1]) ---
+
+        # Latence : saturée par la DDL
         s_latency = 1 - math.exp(-total_latency / (ddl * 0.7))
 
-        # Énergie : Normalisée par une valeur de référence (ex: 0.1J basé sur tes logs)
-        s_energy = 1 - math.exp(-energy_consumed / 0.1)
+        # Énergie : saturée par une ref de 0.1J
+        s_energy = 1 - math.exp(-energy_consumed / 0.3)
 
-        # Charge : Déjà un ratio, on s'assure qu'il reste entre 0 et 1
-        s_load = min(load_ratio, 1.0)
+        # Débit : On veut qu'un débit ÉLEVÉ donne un score BAS (meilleur).
+        s_throughput = math.exp(-tasks_per_second / 0.5)
 
-        # --- SCORE FINAL (Somme pondérée) ---
-        # Somme des poids = 1.0 (ex: 0.5 + 0.3 + 0.2)
+        # --- 4. Calcul Final ---
+        # On ajoute la pénalité d'active task directement au score
         score = (
                 self.alpha * s_latency +
                 self.beta * s_energy +
-                self.gamma * s_load
+                self.gamma / s_throughput +
+                active_penalty
         )
 
-        return min(score, 1.0) # On plafonne à 1.0
+        # Pénalité de dépassement DDL (Incontournable)
+        if total_latency > ddl:
+            score += 0.4
+
+        return min(score, 1.0)
 
     # ==============================
     # Voisin
