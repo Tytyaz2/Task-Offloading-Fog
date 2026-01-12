@@ -1,0 +1,10 @@
+policy: "QICFF"
+algo: "QICFF"
+
+seed: 1
+
+env:
+  dataset: "Pakistan"
+  flag: "Tuple100K"
+  refresh_rate: 0.005
+

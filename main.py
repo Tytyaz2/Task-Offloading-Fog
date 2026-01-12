@@ -28,6 +28,7 @@ from policies.dqrl.taskformer_policy import TaskFormerPolicy
 from policies.heuristics.greedy import GreedyPolicy
 from policies.heuristics.random import  RandomPolicy
 from policies.heuristics.round_robin import RoundRobinPolicy
+from policies.heuristics.QuantumCuckooFireflyPolicy import QICFFPolicy
 
 
 import numpy as np
@@ -256,6 +257,8 @@ def main():
         policy = RandomPolicy()
     elif config["algo"] == "RoundRobin":
         policy = RoundRobinPolicy()
+    elif config["algo"] == "QICFF":
+        policy = QICFFPolicy(env=env, config=config)
     else:
         raise ValueError("Invalid policy name.")
 

@@ -1,0 +1,9 @@
+policy: "QICFF"
+algo: "QICFF"
+
+seed: 1
+
+env:
+  dataset: "Topo4MEC"
+  flag: "100N150E"
+  refresh_rate: 0.005
