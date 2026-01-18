@@ -26,7 +26,7 @@ pip install -r requirements.txt
 To run the simulation, execute the `main.py` script. You can modify the configuration file path to use different scenarios and policies. For example, to run the simulation with the NOTE policy in the Pakistan scenario, use the following command:
 
 ```bash
-python main.py --config configs/Pakistan/DQL/NOTE.yaml
+python main.py --config configs\Topo4MEC\Heuristics\QuantumCuckooFireflyPolicy.yaml
 ```
 
 
@@ -39,10 +39,11 @@ The framework supports various task offloading policies, including:
 - **MLP NPGA/NSGA-II**: A policy using Multi-Layer Perceptron with Non-dominated Sorting Genetic Algorithm.
 - **NOTE**: Node Offloading Transformer-based Encoder policy using the DQL algorithm.
 - **T-NOTE**: Task-aware Node Offloading Transformer-based Encoder policy using the DQL algorithm.
+- **QICFF**: A task-aware node offloading policy that combines Firefly Algorithm (local exploitation), Cuckoo Search with Lévy flights (global exploration), and quantum-inspired random perturbations to select the optimal execution node.
 
 
 ## Informations
 
 This framework is based on the RayCloudSim project available at [RayCloudSim GitHub Repository](https://github.com/ZhangRui111/RayCloudSim). For more details on the simulation environment and additional functionalities please refer to the original repository.
 
-This repository is developed and maintained by Arthur GARON as part of his research project. For any questions or contributions, please feel free to open an issue or submit a pull request.
+This repository is developed and maintained by Arthur GARON as part of his research project. 

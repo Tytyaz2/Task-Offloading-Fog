@@ -9,9 +9,9 @@ class QICFFPolicy(BasePolicy):
         self.env = env
 
         # Poids du score
-        self.alpha = 0.1
-        self.beta = 0.1
-        self.gamma = 0.6
+        self.alpha = 0.5
+        self.beta = 0.5
+        self.gamma = 0.5
 
         # Firefly
         self.population_size = 100
@@ -62,7 +62,7 @@ class QICFFPolicy(BasePolicy):
         # Énergie : saturée par une ref de 0.1J
         s_energy = 1 - math.exp(-energy_consumed / 0.3)
 
-        # Débit : On veut qu'un débit ÉLEVÉ donne un score BAS (meilleur).
+        # Débit : On veut qu'un débit ÉLEVÉ donne un score BAS.
         s_throughput = math.exp(-tasks_per_second / 0.5)
 
         # --- 4. Calcul Final ---
@@ -74,7 +74,7 @@ class QICFFPolicy(BasePolicy):
                 active_penalty
         )
 
-        # Pénalité de dépassement DDL (Incontournable)
+        # Pénalité de dépassement DDL
         if total_latency > ddl:
             score += 0.4
 
